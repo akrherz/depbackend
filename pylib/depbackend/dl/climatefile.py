@@ -127,7 +127,7 @@ order by geom <-> ST_Point(:lon, :lat, 4326) asc limit 1
     return row[0], row[1]
 
 
-def convert_to_weps(clifn: str) -> str:
+def convert_to_weps(clifn: Path) -> str:
     """Read and convert the clifn to a format WEPS likes."""
     dailydf = read_cli(clifn)
     with open(clifn) as fh:
