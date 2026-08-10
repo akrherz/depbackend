@@ -25,6 +25,7 @@ lat=35.5&lon=-97.5&format=weps
 
 import os
 from io import StringIO
+from pathlib import Path
 from typing import Annotated
 
 import pandas as pd
@@ -74,7 +75,11 @@ class Schema(CGIModel):
 
 
 def log_request(
-    conn: Connection, environ: dict, fn: str, distance: float, scenario: int
+    conn: Connection,
+    environ: dict,
+    clipath: Path,
+    distance: float,
+    scenario: int,
 ):
     """Log this request"""
     conn.execute(
@@ -88,7 +93,7 @@ distance_degrees) VALUES (:addr, ST_Point(:lon, :lat, 4326),
         {
             "lon": environ["lon"],
             "lat": environ["lat"],
-            "fn": fn,
+            "fn": str(clipath),
             "dist": distance,
             "addr": environ.get("REMOTE_ADDR"),
             "scenario": scenario,
@@ -171,7 +176,6 @@ def convert_to_weps(clifn: str) -> str:
 def application(environ, start_response):
     """Go Main Go."""
     query: Schema = environ["_cgimodel_schema"]
-    scenario = environ["scenario"]
     domain = get_domain(query.lon, query.lat)
     if domain is None:
         raise NoDataFound("Point is outside of our domain")
@@ -179,11 +183,16 @@ def application(environ, start_response):
     with get_sqlalchemy_conn(dbname) as conn:
         fn, distance = find_closest_file(conn, query)
         if fn is None:
-            raise NoDataFound("No climate files found in our database")
+            raise NoDataFound("Database query found no files within 1° of pt")
+        clipath = Path(fn)
+        if not clipath.is_file():
+            raise NoDataFound(
+                f"Database found a file `{fn}` that does not exist on disk?!?"
+            )
         if query.format == "wepp":
             # Log this request
             try:
-                log_request(conn, environ, fn, distance, scenario)
+                log_request(conn, environ, clipath, distance, query.scenario)
             except Exception as exp:
                 LOG.exception(exp)
 
@@ -195,14 +204,14 @@ def application(environ, start_response):
         ("Content-Disposition", f"attachment; filename={dlfn}"),
     ]
     if query.format == "weps":
-        payload = convert_to_weps(fn)
+        payload = convert_to_weps(clipath)
         start_response("200 OK", headers)
         return payload
 
     start_response("200 OK", headers)
     if query.intensity:
         levels = [int(x) for x in query.intensity]
-        df = read_cli(fn, compute_intensity_over=levels)
+        df = read_cli(clipath, compute_intensity_over=levels)
         df.index.name = "date"
         df = df.loc[: pd.Timestamp("now")]
         df = df[df["pcpn"] > 0]
@@ -213,13 +222,11 @@ def application(environ, start_response):
         df[cols].to_csv(sio, float_format="%.2f")
         return sio.getvalue()
 
-    if not os.path.isfile(fn):
-        raise NoDataFound(f"Database found a file `{fn}` that does not exist")
     if query.format == "wepp":
-        with open(fn, "rb") as fh:
+        with open(clipath, "rb") as fh:
             payload = fh.read()
     elif query.format == "ntt":
-        df = read_cli(fn)
+        df = read_cli(clipath)
         payload = StringIO()
         # Convert langleys to MJ
         df["rad"] = df["rad"] * 0.04184
