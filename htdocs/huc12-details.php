@@ -51,7 +51,7 @@ EOF;
 echo "<h4>{$nicedate} Summary</h4>";
 $rs = pg_prepare($dbconn, "RES", "select sum(qc_precip_mm) as qc_precip,
         sum(avg_runoff_mm) as avg_runoff, sum(avg_loss_kgm2) as avg_loss,
-        sum(avg_delivery_kgm2) as avg_delivery from water_results_by_huc12 WHERE 
+        sum(avg_delivery_kgm2) as avg_delivery from water_results_by_huc12 WHERE
         valid >= $1 and valid <= $2 and huc12_id = get_huc12_id($3, $4)
         and scenario_id = $4");
 $rs = pg_execute($dbconn, "RES", array(
