@@ -15,6 +15,7 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
 ]
 dynamic = [ "version" ]
 urls.homepage = "https://github.com/dailyerosion/depbackend"
@@ -28,7 +29,7 @@ include-package-data = true
 version_scheme = "post-release"
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py311"
 line-length = 79
 lint.select = [
   "B", # bugbear
