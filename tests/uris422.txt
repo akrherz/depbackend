@@ -1,3 +1,7 @@
+/auto/mapper.py?v=bogus
+/auto/mapper.py?extent=A,B,C,D
+/auto/mapper.py?extent=A,B,C
+/auto/mapper.py?overview=1
 /dl/climatefile.py?lon=-0.5&lat=89
 /dl/climatefile.py?lon=10&lat=40
 /dl/weps_hourly_wind.py?lon=10&lat=40

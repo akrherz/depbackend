@@ -20,6 +20,7 @@ edate=2015-12-31&v=avg_runoff&annual=true&state=KS
 
 """
 
+from collections.abc import Callable
 from datetime import date
 from io import BytesIO
 from typing import Annotated
@@ -527,7 +528,7 @@ def make_map(conn, query: Schema):
     schema=Schema,
     parse_times=False,
 )
-def application(environ: dict, start_response: callable):
+def application(environ: dict, start_response: Callable):
     """Our mod-wsgi handler"""
     # Capture the request
     query: Schema = environ["_cgimodel_schema"]
