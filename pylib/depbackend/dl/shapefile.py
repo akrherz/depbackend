@@ -9,12 +9,27 @@ Get the results for 1 Jul 2025
 
 https://mesonet-dep.agron.iastate.edu/dl/shapefile.py?dt=2025-07-01
 
+Get the summary results for all of July 2025
+
+https://mesonet-dep.agron.iastate.edu/dl/shapefile.py?dt=2025-07-01&\
+dt2=2025-07-31
+
+And for a specific state, e.g., Iowa
+
+https://mesonet-dep.agron.iastate.edu/dl/shapefile.py?dt=2025-07-01&states=IA
+
+And now with an english unit result
+
+https://mesonet-dep.agron.iastate.edu/dl/shapefile.py?dt=2025-07-01&\
+conv=english
+
 """
 
-import datetime
 import tempfile
 import zipfile
 from collections.abc import Callable
+from datetime import date
+from typing import Annotated
 
 from geopandas import GeoDataFrame
 from dailyerosion.reference import KG_M2_TO_TON_ACRE
@@ -28,12 +43,15 @@ PRJFILE = "/opt/iem/data/gis/meta/5070.prj"
 class Schema(CGIModel):
     """See how we are called."""
 
-    dt: datetime.date = Field(..., description="Date to query")
-    dt2: datetime.date = Field(None, description="Optional end date")
-    states: ListOrCSVType = Field(
-        None, description="Optional comma delimited states"
-    )
-    conv: str = Field("metric", description="Output units, metric or english")
+    dt: Annotated[date, Field(description="Date to query")]
+    dt2: Annotated[date | None, Field(description="Optional end date")] = None
+    states: Annotated[
+        ListOrCSVType | None,
+        Field(description="Optional comma delimited states"),
+    ] = None
+    conv: Annotated[
+        str, Field(description="Output units, metric or english")
+    ] = "metric"
 
 
 def workflow(start_response: Callable, dt, dt2, states, conv):
@@ -120,7 +138,7 @@ def workflow(start_response: Callable, dt, dt2, states, conv):
 
 
 @iemapp(help=__doc__, schema=Schema)
-def application(environ, start_response: Callable):
+def application(environ: dict, start_response: Callable):
     """Generate something nice for the users"""
     dt = environ["dt"]
     dt2 = environ["dt2"]
